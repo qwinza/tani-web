@@ -1,19 +1,43 @@
 /**
  * MapSection Component
- * - "Sebaran Petani" section
- * - Placeholder map container (Leaflet/OpenStreetMap ready)
- * - Clean rounded UI with markers
+ * - "Sebaran Petani" section with interactive Leaflet map
+ * - Uses OpenStreetMap tiles via Leaflet.js
+ * - Custom markers with popups for farmer locations
  */
+import { useEffect, useRef, useState } from 'react';
 import { MapPin, Users, Package, Navigation } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix for default marker icons in React-Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+// Custom green marker icon for farmers
+const farmerIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
 
 export default function MapSection() {
-    // Sample farmer locations data
+    // Farmer locations data with actual coordinates
     const farmerLocations = [
-        { id: 1, name: 'Jawa Barat', farmers: 150, top: '35%', left: '22%' },
-        { id: 2, name: 'Jawa Tengah', farmers: 120, top: '38%', left: '35%' },
-        { id: 3, name: 'Jawa Timur', farmers: 130, top: '40%', left: '48%' },
-        { id: 4, name: 'Sumatera Utara', farmers: 80, top: '20%', left: '15%' },
-        { id: 5, name: 'Sulawesi Selatan', farmers: 60, top: '45%', left: '65%' },
+        { id: 1, name: 'Jawa Barat', farmers: 150, lat: -6.9175, lng: 107.6191, city: 'Bandung' },
+        { id: 2, name: 'Jawa Tengah', farmers: 120, lat: -7.0051, lng: 110.4381, city: 'Semarang' },
+        { id: 3, name: 'Jawa Timur', farmers: 130, lat: -7.2575, lng: 112.7521, city: 'Surabaya' },
+        { id: 4, name: 'Sumatera Utara', farmers: 80, lat: 3.5952, lng: 98.6722, city: 'Medan' },
+        { id: 5, name: 'Sulawesi Selatan', farmers: 60, lat: -5.1477, lng: 119.4327, city: 'Makassar' },
+        { id: 6, name: 'Bali', farmers: 45, lat: -8.4095, lng: 115.1889, city: 'Denpasar' },
+        { id: 7, name: 'Yogyakarta', farmers: 75, lat: -7.7956, lng: 110.3695, city: 'Yogyakarta' },
+        { id: 8, name: 'Kalimantan Selatan', farmers: 35, lat: -3.3194, lng: 114.5908, city: 'Banjarmasin' },
     ];
 
     const stats = [
@@ -21,6 +45,10 @@ export default function MapSection() {
         { icon: MapPin, value: '34', label: 'Provinsi' },
         { icon: Package, value: '1.2K+', label: 'Produk Tersedia' },
     ];
+
+    // Indonesia center coordinates
+    const indonesiaCenter = [-2.5489, 118.0149];
+    const defaultZoom = 5;
 
     return (
         <section id="peta" className="py-24 bg-gradient-to-b from-gray-50 to-white">
@@ -41,61 +69,57 @@ export default function MapSection() {
                     </p>
                 </div>
 
-                {/* Map Container */}
+                {/* Map Container with Leaflet */}
                 <div className="relative bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-                    {/* Map Background */}
-                    <div className="relative h-[500px] bg-gradient-to-br from-green-50 via-blue-50 to-emerald-50">
-                        {/* Indonesia Map Silhouette (SVG simplified) */}
-                        <svg
-                            viewBox="0 0 800 400"
-                            className="absolute inset-0 w-full h-full opacity-20"
-                            fill="currentColor"
+                    <div className="relative h-[500px]">
+                        <MapContainer
+                            center={indonesiaCenter}
+                            zoom={defaultZoom}
+                            scrollWheelZoom={true}
+                            style={{ height: '100%', width: '100%', borderRadius: '1.5rem' }}
+                            className="z-0"
                         >
-                            <path
-                                className="text-green-600"
-                                d="M100,180 Q150,150 200,170 Q250,190 280,175 Q320,160 350,180 Q380,200 420,185 Q460,170 500,190 Q540,210 580,195 Q620,180 660,200 Q700,220 720,200 L720,280 Q680,300 640,285 Q600,270 560,290 Q520,310 480,295 Q440,280 400,300 Q360,320 320,305 Q280,290 240,310 Q200,330 160,315 Q120,300 100,280 Z"
+                            {/* OpenStreetMap Tile Layer */}
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             />
-                        </svg>
 
-                        {/* Animated Background Circles */}
-                        <div className="absolute inset-0">
-                            <div className="absolute top-1/4 left-1/4 w-40 h-40 bg-green-200/30 rounded-full blur-2xl animate-pulse" />
-                            <div className="absolute top-1/2 right-1/3 w-32 h-32 bg-blue-200/30 rounded-full blur-2xl animate-pulse delay-500" />
-                            <div className="absolute bottom-1/4 right-1/4 w-36 h-36 bg-emerald-200/30 rounded-full blur-2xl animate-pulse delay-1000" />
-                        </div>
+                            {/* Farmer Location Markers */}
+                            {farmerLocations.map((location) => (
+                                <Marker
+                                    key={location.id}
+                                    position={[location.lat, location.lng]}
+                                    icon={farmerIcon}
+                                >
+                                    <Popup>
+                                        <div className="text-center p-2">
+                                            <h3 className="font-bold text-green-700 text-lg mb-1">
+                                                {location.name}
+                                            </h3>
+                                            <p className="text-gray-600 text-sm mb-2">
+                                                {location.city}
+                                            </p>
+                                            <div className="flex items-center justify-center gap-1 bg-green-100 rounded-full px-3 py-1">
+                                                <Users className="w-4 h-4 text-green-600" />
+                                                <span className="text-green-700 font-semibold">
+                                                    {location.farmers} Petani
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            ))}
+                        </MapContainer>
 
-                        {/* Location Markers */}
-                        {farmerLocations.map((location) => (
-                            <div
-                                key={location.id}
-                                className="absolute group cursor-pointer"
-                                style={{ top: location.top, left: location.left }}
-                            >
-                                {/* Pulse Ring */}
-                                <div className="absolute -inset-2 bg-green-500/20 rounded-full animate-ping" />
-                                {/* Marker */}
-                                <div className="relative w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform">
-                                    <MapPin className="w-4 h-4 text-white" />
-                                </div>
-                                {/* Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-lg">
-                                        <p className="font-semibold">{location.name}</p>
-                                        <p className="text-gray-300">{location.farmers} Petani</p>
-                                    </div>
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* Map Label */}
-                        <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                        {/* Map Label Overlay */}
+                        <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg z-[1000]">
                             <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Peta Interaktif</p>
-                            <p className="text-sm font-medium text-gray-700">Hover untuk melihat detail lokasi</p>
+                            <p className="text-sm font-medium text-gray-700">Klik marker untuk melihat detail</p>
                         </div>
 
-                        {/* Legend */}
-                        <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                        {/* Legend Overlay */}
+                        <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg z-[1000]">
                             <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Legenda</p>
                             <div className="flex items-center gap-2">
                                 <div className="w-3 h-3 bg-green-600 rounded-full" />

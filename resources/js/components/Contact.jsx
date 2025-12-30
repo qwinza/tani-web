@@ -103,25 +103,6 @@ export default function Contact() {
                                 ))}
                             </div>
                         </div>
-
-                        {/* Social Media */}
-                        <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl p-8 text-white">
-                            <h3 className="text-xl font-semibold mb-4">Ikuti Kami</h3>
-                            <p className="text-green-100 mb-6">
-                                Dapatkan update terbaru tentang AgriMatch dan tips pertanian.
-                            </p>
-                            <div className="flex gap-3">
-                                {['facebook', 'twitter', 'instagram', 'youtube'].map((social) => (
-                                    <a
-                                        key={social}
-                                        href="#"
-                                        className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
-                                    >
-                                        <span className="capitalize text-sm">{social[0].toUpperCase()}</span>
-                                    </a>
-                                ))}
-                            </div>
-                        </div>
                     </div>
 
                     {/* Contact Form */}
