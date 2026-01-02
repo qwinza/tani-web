@@ -28,20 +28,32 @@ const farmerIcon = new L.Icon({
 });
 
 export default function MapSection() {
-    // Farmer locations data with actual coordinates
-    const farmerLocations = [
-        { id: 1, name: 'Jawa Barat', farmers: 150, lat: -6.9175, lng: 107.6191, city: 'Bandung' },
-        { id: 2, name: 'Jawa Tengah', farmers: 120, lat: -7.0051, lng: 110.4381, city: 'Semarang' },
-        { id: 3, name: 'Jawa Timur', farmers: 130, lat: -7.2575, lng: 112.7521, city: 'Surabaya' },
-        { id: 4, name: 'Sumatera Utara', farmers: 80, lat: 3.5952, lng: 98.6722, city: 'Medan' },
-        { id: 5, name: 'Sulawesi Selatan', farmers: 60, lat: -5.1477, lng: 119.4327, city: 'Makassar' },
-        { id: 6, name: 'Bali', farmers: 45, lat: -8.4095, lng: 115.1889, city: 'Denpasar' },
-        { id: 7, name: 'Yogyakarta', farmers: 75, lat: -7.7956, lng: 110.3695, city: 'Yogyakarta' },
-        { id: 8, name: 'Kalimantan Selatan', farmers: 35, lat: -3.3194, lng: 114.5908, city: 'Banjarmasin' },
-    ];
+    // Farmer locations state
+    const [farmerLocations, setFarmerLocations] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        // Fetch all public farmers
+        fetch('/api/farmers')
+            .then(res => res.json())
+            .then(data => {
+                // Map directly as the API already filters
+                const farmers = data.map(farmer => ({
+                    id: farmer.id,
+                    name: farmer.name,
+                    city: farmer.address ? farmer.address.split(',')[0] : 'Indonesia',
+                    lat: parseFloat(farmer.latitude),
+                    lng: parseFloat(farmer.longitude),
+                    farmers: 1
+                }));
+                setFarmerLocations(farmers);
+                setLoading(false);
+            })
+            .catch(err => console.error("Failed to load map data:", err));
+    }, []);
 
     const stats = [
-        { icon: Users, value: '500+', label: 'Petani Terdaftar' },
+        { icon: Users, value: `${farmerLocations.length}+`, label: 'Petani Terdaftar' },
         { icon: MapPin, value: '34', label: 'Provinsi' },
         { icon: Package, value: '1.2K+', label: 'Produk Tersedia' },
     ];
@@ -103,7 +115,7 @@ export default function MapSection() {
                                             <div className="flex items-center justify-center gap-1 bg-green-100 rounded-full px-3 py-1">
                                                 <Users className="w-4 h-4 text-green-600" />
                                                 <span className="text-green-700 font-semibold">
-                                                    {location.farmers} Petani
+                                                    Petani Verifikasi
                                                 </span>
                                             </div>
                                         </div>

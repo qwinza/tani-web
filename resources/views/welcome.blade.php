@@ -8,6 +8,7 @@
         content="AgriMatch - Platform marketplace pertanian yang menghubungkan petani lokal dengan pembeli secara langsung. Dapatkan hasil pertanian segar dengan harga terbaik.">
     <meta name="keywords" content="pertanian, marketplace, petani, pembeli, agrikultur, komoditas, Indonesia">
     <meta name="author" content="AgriMatch">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Open Graph / Social Media -->
     <meta property="og:title" content="AgriMatch - Hubungkan Petani & Pembeli">

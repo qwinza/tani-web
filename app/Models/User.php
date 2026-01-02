@@ -12,6 +12,14 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    const ROLE_PETANI = 'petani';
+    const ROLE_PEMBELI = 'pembeli';
+    const ROLE_SUPERADMIN = 'superadmin';
+
+    const STATUS_PENDING = 'pending';
+    const STATUS_APPROVED = 'approved';
+    const STATUS_REJECTED = 'rejected';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -21,7 +29,41 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'status',
+        'is_active',
+        'address',
+        'latitude',
+        'longitude',
     ];
+
+    /**
+     * Check if user has specific role.
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    public function isPetani(): bool
+    {
+        return $this->hasRole(self::ROLE_PETANI);
+    }
+
+    public function isPembeli(): bool
+    {
+        return $this->hasRole(self::ROLE_PEMBELI);
+    }
+
+    public function isSuperadmin(): bool
+    {
+        return $this->hasRole(self::ROLE_SUPERADMIN);
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
 
     /**
      * The attributes that should be hidden for serialization.

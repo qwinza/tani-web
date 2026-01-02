@@ -12,60 +12,44 @@ import {
     Shield,
     Truck,
     MessageCircle,
-    BarChart3
+    BarChart3,
+    ArrowRight
 } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function Features() {
-    const features = [
-        {
-            icon: ShoppingBag,
-            title: 'Transaksi Langsung',
-            description: 'Beli langsung dari petani tanpa perantara. Harga lebih baik untuk petani dan pembeli.',
-            color: 'green',
-        },
-        {
-            icon: MapPin,
-            title: 'Peta Petani',
-            description: 'Temukan petani terdekat dengan peta interaktif. Lihat produk dan ketersediaan real-time.',
-            color: 'blue',
-        },
-        {
-            icon: LayoutDashboard,
-            title: 'Dashboard Petani',
-            description: 'Kelola produk, pantau penjualan, dan analisis performa dengan dashboard yang intuitif.',
-            color: 'purple',
-        },
-        {
-            icon: History,
-            title: 'Riwayat Transaksi',
-            description: 'Lacak semua transaksi dengan detail lengkap. Mudah untuk pembukuan dan referensi.',
-            color: 'orange',
-        },
-        {
-            icon: Shield,
-            title: 'Pembayaran Aman',
-            description: 'Sistem pembayaran terenkripsi dengan berbagai metode. Uang aman sampai barang diterima.',
-            color: 'cyan',
-        },
-        {
-            icon: Truck,
-            title: 'Pengiriman Terlacak',
-            description: 'Pantau pengiriman dari petani sampai ke tangan Anda dengan sistem tracking real-time.',
-            color: 'pink',
-        },
-        {
-            icon: MessageCircle,
-            title: 'Chat Langsung',
-            description: 'Komunikasi langsung dengan petani untuk diskusi produk, negosiasi, atau pertanyaan.',
-            color: 'indigo',
-        },
-        {
-            icon: BarChart3,
-            title: 'Analisis Pasar',
-            description: 'Akses data harga pasar dan tren untuk keputusan jual-beli yang lebih cerdas.',
-            color: 'teal',
-        },
-    ];
+    const [features, setFeatures] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchFeatures = async () => {
+            try {
+                const response = await axios.get('/api/features');
+                setFeatures(response.data);
+            } catch (error) {
+                console.error('Error fetching features:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFeatures();
+    }, []);
+
+    const iconMap = {
+        ShoppingBag,
+        MapPin,
+        LayoutDashboard,
+        History,
+        Shield,
+        Truck,
+        MessageCircle,
+        BarChart3,
+        ArrowRight
+    };
 
     const colorClasses = {
         green: 'bg-green-100 text-green-600 group-hover:bg-green-600',
@@ -79,8 +63,12 @@ export default function Features() {
     };
 
     return (
-        <section id="fitur" className="py-24 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="fitur" className="py-24 bg-white relative overflow-hidden">
+            {/* Background Decoration */}
+            <div className="absolute top-1/4 -right-20 w-80 h-80 bg-green-50 rounded-full blur-3xl opacity-60" />
+            <div className="absolute bottom-1/4 -left-20 w-80 h-80 bg-emerald-50 rounded-full blur-3xl opacity-60" />
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 {/* Section Header */}
                 <div className="text-center mb-16">
                     <span className="inline-block px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-full mb-6">
@@ -97,33 +85,48 @@ export default function Features() {
                 </div>
 
                 {/* Features Grid */}
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {features.map((feature, index) => (
-                        <div
-                            key={index}
-                            className="group relative p-6 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-xl transition-all duration-300 cursor-pointer border border-transparent hover:border-gray-100"
-                        >
-                            {/* Icon */}
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 ${colorClasses[feature.color]} group-hover:text-white group-hover:scale-110`}>
-                                <feature.icon className="w-7 h-7" />
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[400px]">
+                    {loading ? (
+                        // Loading Skeletons
+                        [...Array(8)].map((_, i) => (
+                            <div key={i} className="p-8 bg-gray-50 rounded-3xl animate-pulse">
+                                <div className="w-14 h-14 bg-gray-200 rounded-2xl mb-6"></div>
+                                <div className="h-6 bg-gray-200 rounded-full w-3/4 mb-3"></div>
+                                <div className="h-4 bg-gray-200 rounded-full w-full mb-2"></div>
+                                <div className="h-4 bg-gray-200 rounded-full w-5/6"></div>
                             </div>
+                        ))
+                    ) : (
+                        features.map((feature, index) => {
+                            const IconComponent = iconMap[feature.icon] || ShoppingBag;
+                            return (
+                                <div
+                                    key={feature.id || index}
+                                    className={`group relative p-8 bg-gray-50 rounded-3xl hover:bg-white hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer border border-transparent hover:border-green-100 animate-slide-up`}
+                                    style={{ animationDelay: `${index * 100}ms` }}
+                                >
+                                    {/* Icon */}
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 ${colorClasses[feature.color]} group-hover:text-white group-hover:scale-110 group-hover:rotate-3 shadow-sm`}>
+                                        <IconComponent className="w-7 h-7" />
+                                    </div>
 
-                            {/* Content */}
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">
-                                {feature.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 leading-relaxed">
-                                {feature.description}
-                            </p>
+                                    {/* Content */}
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-green-700 transition-colors">
+                                        {feature.title}
+                                    </h3>
+                                    <p className="text-gray-600 leading-relaxed">
+                                        {feature.description}
+                                    </p>
 
-                            {/* Hover Arrow */}
-                            <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                </svg>
-                            </div>
-                        </div>
-                    ))}
+                                    {/* Hover Arrow */}
+                                    <div className="mt-6 flex items-center gap-2 text-green-600 font-semibold text-sm opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
+                                        <span>Selengkapnya</span>
+                                        <ArrowRight className="w-4 h-4" />
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
 
                 {/* CTA Banner */}
@@ -143,9 +146,12 @@ export default function Features() {
                                 Daftar sekarang dan mulai transaksi dengan petani lokal.
                             </p>
                         </div>
-                        <button href="register" className="px-8 py-4 bg-white text-green-700 font-semibold rounded-xl hover:bg-green-50 transition-colors shadow-lg whitespace-nowrap">
+                        <Link 
+                            href="/register" 
+                            className="px-8 py-4 bg-white text-green-700 font-bold rounded-2xl hover:bg-green-50 transition-all hover:scale-105 active:scale-95 shadow-xl whitespace-nowrap"
+                        >
                             Daftar Gratis
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>

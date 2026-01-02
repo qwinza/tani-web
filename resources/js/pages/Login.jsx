@@ -4,9 +4,70 @@
  * - Matches landing page design with green theme
  * - Responsive: image hidden on mobile
  */
+import { useState } from 'react';
 import { Mail, Lock, ArrowRight, Leaf } from 'lucide-react';
 
 export default function Login() {
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        remember: false
+    });
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData({
+            ...formData,
+            [name]: type === 'checkbox' ? checked : value
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setErrors({});
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (data.errors) {
+                    setErrors(data.errors);
+                } else {
+                    alert(data.message || 'Login gagal. Periksa kembali email dan password Anda.');
+                }
+                return;
+            }
+
+            const role = data.user.role;
+            if (role === 'superadmin') {
+                window.location.href = '/admin/dashboard';
+            } else if (role === 'petani') {
+                window.location.href = '/farmer/dashboard';
+            } else {
+                window.location.href = '/buyer/dashboard';
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('Gagal menghubungkan ke server');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex">
             {/* Left Side - Login Form */}
@@ -26,7 +87,7 @@ export default function Login() {
                     </div>
 
                     {/* Login Form */}
-                    <form className="mt-8 space-y-6" action="#" method="POST">
+                    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                         <div className="space-y-4">
                             {/* Email Input */}
                             <div>
@@ -41,12 +102,14 @@ export default function Login() {
                                         id="email"
                                         name="email"
                                         type="email"
-                                        autoComplete="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
                                         required
-                                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                                         placeholder="nama@email.com"
                                     />
                                 </div>
+                                {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email[0]}</p>}
                             </div>
 
                             {/* Password Input */}
@@ -62,12 +125,14 @@ export default function Login() {
                                         id="password"
                                         name="password"
                                         type="password"
-                                        autoComplete="current-password"
+                                        value={formData.password}
+                                        onChange={handleChange}
                                         required
-                                        className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
                                         placeholder="••••••••"
                                     />
                                 </div>
+                                {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password[0]}</p>}
                             </div>
                         </div>
 
@@ -75,12 +140,14 @@ export default function Login() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center">
                                 <input
-                                    id="remember-me"
-                                    name="remember-me"
+                                    id="remember"
+                                    name="remember"
                                     type="checkbox"
+                                    checked={formData.remember}
+                                    onChange={handleChange}
                                     className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
                                 />
-                                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
+                                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700 cursor-pointer">
                                     Ingat saya
                                 </label>
                             </div>
@@ -96,10 +163,11 @@ export default function Login() {
                         <div>
                             <button
                                 type="submit"
-                                className="group relative w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-lg shadow-green-600/25 hover:shadow-green-600/40"
+                                disabled={loading}
+                                className={`group relative w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-lg shadow-green-600/25 hover:shadow-green-600/40 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                Masuk
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                {loading ? 'Masuk...' : 'Masuk'}
+                                {!loading && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
                             </button>
                         </div>
 
