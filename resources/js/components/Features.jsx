@@ -143,7 +143,7 @@ export default function Features() {
                                 Daftar sekarang dan mulai transaksi dengan petani lokal.
                             </p>
                         </div>
-                        <button className="px-8 py-4 bg-white text-green-700 font-semibold rounded-xl hover:bg-green-50 transition-colors shadow-lg whitespace-nowrap">
+                        <button href="register" className="px-8 py-4 bg-white text-green-700 font-semibold rounded-xl hover:bg-green-50 transition-colors shadow-lg whitespace-nowrap">
                             Daftar Gratis
                         </button>
                     </div>

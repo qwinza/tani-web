@@ -71,7 +71,7 @@ export default function About() {
                                     <img
                                         src="https://images.unsplash.com/photo-1607688387751-c1e95ae09a42?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
                                         alt="Petani bekerja"
-                                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                                        className="w-full h-full object-cover hover:scale-110 transition-transform delay-300 "
                                     />
                                 </div>
                                 <div className="aspect-video rounded-2xl overflow-hidden shadow-lg">

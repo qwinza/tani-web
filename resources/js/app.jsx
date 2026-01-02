@@ -7,10 +7,18 @@ import './bootstrap';
 import '../css/app.css';
 import { createRoot } from 'react-dom/client';
 import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
-// Mount the React app
 const container = document.getElementById('app');
 if (container) {
     const root = createRoot(container);
-    root.render(<Home />);
+    const path = window.location.pathname || '/';
+    if (path.toLowerCase().startsWith('/login')) {
+        root.render(<Login />);
+    } else if (path.toLowerCase().startsWith('/register')) {
+        root.render(<Register />);
+    } else {
+        root.render(<Home />);
+    }
 }
