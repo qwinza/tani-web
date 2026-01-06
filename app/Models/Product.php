@@ -15,8 +15,22 @@ class Product extends Model
         'name',
         'description',
         'price',
+        'unit',
         'stock',
+        'min_order',
         'image_url',
+        'images',
+        'features',
+        'origin',
+        'certifications',
+        'harvest_date',
+    ];
+
+    protected $casts = [
+        'images' => 'array',
+        'features' => 'array',
+        'certifications' => 'array',
+        'harvest_date' => 'date',
     ];
 
     public function user()

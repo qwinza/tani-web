@@ -4,11 +4,13 @@ import { CartProvider, useCart } from '../../context/CartContext';
 
 // Sub-pages
 import ProductMarket from './buyer/ProductMarket';
+import ProductDetail from './buyer/ProductDetail';
 import ShoppingCartUI from './buyer/ShoppingCart';
 import OrderHistory from './buyer/OrderHistory';
 
 function DashboardContent() {
     const [activeTab, setActiveTab] = useState('market');
+    const [selectedProductId, setSelectedProductId] = useState(null);
     const { cartCount, cartTotal } = useCart();
     const [user, setUser] = useState(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -22,11 +24,21 @@ function DashboardContent() {
 
     const handleLogout = async () => {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        await fetch('/api/logout', { 
+        await fetch('/api/logout', {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': csrfToken }
         });
         window.location.href = '/login';
+    };
+
+    const handleProductSelect = (productId) => {
+        setSelectedProductId(productId);
+        setActiveTab('productDetail');
+    };
+
+    const handleBackToMarket = () => {
+        setSelectedProductId(null);
+        setActiveTab('market');
     };
 
     const renderContent = () => {
@@ -34,7 +46,8 @@ function DashboardContent() {
             switch (activeTab) {
                 case 'cart': return <ShoppingCartUI />;
                 case 'orders': return <OrderHistory />;
-                default: return <ProductMarket />;
+                case 'productDetail': return <ProductDetail productId={selectedProductId} onBack={handleBackToMarket} />;
+                default: return <ProductMarket onProductSelect={handleProductSelect} />;
             }
         } catch (error) {
             return <div className="p-12 text-center text-red-500">Terjadi kesalahan saat memuat konten.</div>;
@@ -47,7 +60,7 @@ function DashboardContent() {
             <header className="sticky top-4 z-50 px-4 md:px-8">
                 <nav className="max-w-7xl mx-auto glass-morphism shadow-2xl shadow-emerald-900/5 rounded-[32px] px-6 py-4 flex justify-between items-center transition-all">
                     {/* Logo */}
-                    <div 
+                    <div
                         onClick={() => setActiveTab('market')}
                         className="flex items-center gap-3 cursor-pointer group"
                     >
@@ -59,13 +72,13 @@ function DashboardContent() {
 
                     {/* Nav Links */}
                     <div className="hidden md:flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                        <button 
+                        <button
                             onClick={() => setActiveTab('market')}
                             className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'market' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/10' : 'text-slate-500 hover:text-emerald-600'}`}
                         >
                             <Store className="w-4 h-4" /> Pasar
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('orders')}
                             className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'orders' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/10' : 'text-slate-500 hover:text-emerald-600'}`}
                         >
@@ -76,7 +89,7 @@ function DashboardContent() {
                     {/* Actions */}
                     <div className="flex items-center gap-3 md:gap-5">
                         {/* Cart */}
-                        <button 
+                        <button
                             onClick={() => setActiveTab('cart')}
                             className={`relative p-3 rounded-2xl transition-all group ${activeTab === 'cart' ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/20' : 'bg-slate-50 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-100'}`}
                         >
@@ -90,7 +103,7 @@ function DashboardContent() {
 
                         {/* Profile Dropdown */}
                         <div className="relative">
-                            <button 
+                            <button
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                                 className="flex items-center gap-2 p-1.5 pr-4 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
                             >
@@ -106,21 +119,21 @@ function DashboardContent() {
 
                             {isProfileOpen && (
                                 <div className="absolute top-full right-0 mt-3 w-56 bg-white rounded-3xl shadow-2xl border border-slate-100 py-3 animate-in fade-in slide-in-from-top-2 overflow-hidden">
-                                     <div className="px-6 py-2 border-b border-slate-50 mb-2">
-                                         <p className="text-[10px] font-black text-slate-400 uppercase">Terdaftar sebagai</p>
-                                         <p className="text-sm font-bold text-slate-900 italic">Pembeli AgriMatch</p>
-                                     </div>
-                                     <button className="w-full flex items-center gap-3 px-6 py-3 text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-all">
-                                         <User className="w-4 h-4" />
-                                         <span className="font-bold text-sm">Profil Lengkap</span>
-                                     </button>
-                                     <button 
+                                    <div className="px-6 py-2 border-b border-slate-50 mb-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase">Terdaftar sebagai</p>
+                                        <p className="text-sm font-bold text-slate-900 italic">Pembeli AgriMatch</p>
+                                    </div>
+                                    <button className="w-full flex items-center gap-3 px-6 py-3 text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-all">
+                                        <User className="w-4 h-4" />
+                                        <span className="font-bold text-sm">Profil Lengkap</span>
+                                    </button>
+                                    <button
                                         onClick={handleLogout}
                                         className="w-full flex items-center gap-3 px-6 py-3 text-red-500 hover:bg-red-50 transition-all"
-                                     >
-                                         <LogOut className="w-4 h-4" />
-                                         <span className="font-bold text-sm">Keluar Sesi</span>
-                                     </button>
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span className="font-bold text-sm">Keluar Sesi</span>
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -139,18 +152,18 @@ function DashboardContent() {
                                 <h2 className="text-4xl md:text-6xl font-black mb-6 leading-[1.1] font-outfit">Sayuran Segar Langsung Dari Kebun.</h2>
                                 <p className="text-emerald-50 mb-8 font-medium">Dapatkan hasil tani terbaik dengan harga terjangkau dan bantu petani lokal berkembang bersama AgriMatch.</p>
                                 <div className="flex flex-wrap gap-4">
-                                     <div className="flex -space-x-3">
-                                          {[1,2,3,4].map(i => (
-                                              <img key={i} className="w-10 h-10 rounded-full border-2 border-emerald-600 bg-white" src={`https://i.pravatar.cc/100?u=${i+20}`} alt="user" />
-                                          ))}
-                                     </div>
-                                     <p className="text-xs font-bold self-center"><span className="text-amber-400">1,200+</span> Orang telah berbelanja minggu ini</p>
+                                    <div className="flex -space-x-3">
+                                        {[1, 2, 3, 4].map(i => (
+                                            <img key={i} className="w-10 h-10 rounded-full border-2 border-emerald-600 bg-white" src={`https://i.pravatar.cc/100?u=${i + 20}`} alt="user" />
+                                        ))}
+                                    </div>
+                                    <p className="text-xs font-bold self-center"><span className="text-amber-400">1,200+</span> Orang telah berbelanja minggu ini</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 )}
-                
+
                 <div className="animate-in fade-in duration-700">
                     {renderContent()}
                 </div>
@@ -158,14 +171,14 @@ function DashboardContent() {
 
             {/* Mobile Bottom Nav */}
             <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] z-50">
-                 <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-2 flex justify-around items-center shadow-2xl">
-                      <button onClick={() => setActiveTab('market')} className={`p-4 rounded-2xl transition-all ${activeTab === 'market' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}><Store className="w-6 h-6" /></button>
-                      <button onClick={() => setActiveTab('cart')} className={`p-4 rounded-2xl transition-all relative ${activeTab === 'cart' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                          <ShoppingBag className="w-6 h-6" />
-                          {cartCount > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full border-2 border-slate-900"></span>}
-                      </button>
-                      <button onClick={() => setActiveTab('orders')} className={`p-4 rounded-2xl transition-all ${activeTab === 'orders' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}><History className="w-6 h-6" /></button>
-                 </div>
+                <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-2 flex justify-around items-center shadow-2xl">
+                    <button onClick={() => setActiveTab('market')} className={`p-4 rounded-2xl transition-all ${activeTab === 'market' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}><Store className="w-6 h-6" /></button>
+                    <button onClick={() => setActiveTab('cart')} className={`p-4 rounded-2xl transition-all relative ${activeTab === 'cart' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}>
+                        <ShoppingBag className="w-6 h-6" />
+                        {cartCount > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full border-2 border-slate-900"></span>}
+                    </button>
+                    <button onClick={() => setActiveTab('orders')} className={`p-4 rounded-2xl transition-all ${activeTab === 'orders' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500'}`}><History className="w-6 h-6" /></button>
+                </div>
             </div>
         </div>
     );

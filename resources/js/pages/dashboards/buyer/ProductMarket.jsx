@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, Filter, Tag, LayoutGrid, List, ShoppingBasket } from 'lucide-react';
 import { useCart } from '../../../context/CartContext';
 
-export default function ProductMarket() {
+export default function ProductMarket({ onProductSelect }) {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -43,16 +44,16 @@ export default function ProductMarket() {
             <div className="flex flex-col md:flex-row gap-4 mb-8">
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input 
-                        type="text" 
-                        placeholder="Cari produk pertanian segar..." 
+                    <input
+                        type="text"
+                        placeholder="Cari produk pertanian segar..."
                         className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
                 <div className="flex gap-2">
-                    <select 
+                    <select
                         className="px-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-gray-700"
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
@@ -74,10 +75,14 @@ export default function ProductMarket() {
                     </div>
                 ) : (
                     filteredProducts.map(product => (
-                        <div key={product.id} className="bg-white rounded-3xl overflow-hidden border border-gray-50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
+                        <div
+                            key={product.id}
+                            onClick={() => onProductSelect && onProductSelect(product.id)}
+                            className="bg-white rounded-3xl overflow-hidden border border-gray-50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer"
+                        >
                             <div className="aspect-square bg-gray-100 relative overflow-hidden">
-                                <img 
-                                    src={product.image_url || 'https://images.unsplash.com/photo-1595841696662-540937a6b28b?q=80&w=300&auto=format&fit=crop'} 
+                                <img
+                                    src={product.image_url || 'https://images.unsplash.com/photo-1595841696662-540937a6b28b?q=80&w=300&auto=format&fit=crop'}
                                     alt={product.name}
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
@@ -93,7 +98,7 @@ export default function ProductMarket() {
                                         <p className="text-xs text-gray-400">Harga per sat</p>
                                         <p className="text-xl font-black text-emerald-600">Rp {Number(product.price).toLocaleString('id-ID')}</p>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => addToCart(product)}
                                         className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center hover:bg-emerald-700 shadow-lg shadow-emerald-200 active:scale-90 transition-all"
                                     >
