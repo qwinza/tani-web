@@ -27,6 +27,8 @@ class PaymentController extends Controller
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
             'total_price' => 'required|numeric|min:0',
+            'shipping_address' => 'required|string',
+            'phone_number' => 'required|string',
         ]);
 
         try {
@@ -38,6 +40,8 @@ class PaymentController extends Controller
                 'total_price' => $request->total_price,
                 'status' => 'pending',
                 'external_id' => 'ORDER-' . time() . '-' . auth()->id(),
+                'shipping_address' => $request->shipping_address,
+                'phone_number' => $request->phone_number,
             ]);
 
             // Prepare Midtrans transaction details
@@ -107,7 +111,7 @@ class PaymentController extends Controller
             // Update order based on transaction status
             if ($transactionStatus == 'capture' || $transactionStatus == 'settlement') {
                 $order->update([
-                    'status' => 'paid',
+                    'status' => 'pending',
                     'payment_type' => $paymentType,
                 ]);
             } elseif ($transactionStatus == 'pending') {
