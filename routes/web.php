@@ -24,7 +24,8 @@ Route::put('/api/user', [AuthController::class, 'updateProfile'])->middleware('a
 Route::middleware(['auth'])->group(function () {
     // Buyer routes
     Route::get('/api/products', [ProductController::class, 'index'])->middleware('role:pembeli');
-    
+    Route::get('/api/products/{id}', [ProductController::class, 'show'])->middleware('role:pembeli');
+
     // Farmer routes
     Route::middleware(['role:petani'])->group(function () {
         Route::get('/api/my-products', [ProductController::class, 'myProducts']);
@@ -32,14 +33,14 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/api/products/{product}', [ProductController::class, 'update']);
         Route::delete('/api/products/{product}', [ProductController::class, 'destroy']);
         Route::get('/api/categories', [AdminController::class, 'categories']);
-        
+
         // Farmer Order views
         Route::get('/api/farmer/orders', [OrderController::class, 'farmerOrders']);
         Route::patch('/api/orders/{order}/status', [OrderController::class, 'updateStatus']);
     });
 
     // Buyer & All Auth User routes
-    Route::middleware(['auth'])->group(function() {
+    Route::middleware(['auth'])->group(function () {
         Route::get('/api/orders', [OrderController::class, 'index']);
         Route::post('/api/orders', [OrderController::class, 'store']);
         Route::get('/api/categories', [AdminController::class, 'categories']);
@@ -52,13 +53,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/admin/users', [AuthController::class, 'allUsers']); // Need to add this to AuthController
         Route::patch('/api/admin/users/{user}/toggle', [AdminController::class, 'toggleUserStatus']);
         Route::patch('/api/admin/users/{user}/verify', [AdminController::class, 'verifyFarmer']);
-        
+
         Route::get('/api/admin/categories', [AdminController::class, 'categories']);
         Route::post('/api/admin/categories', [AdminController::class, 'storeCategory']);
         Route::delete('/api/admin/categories/{category}', [AdminController::class, 'deleteCategory']);
 
         Route::get('/api/admin/orders', [AdminController::class, 'orders']);
-        
+
         Route::get('/api/admin/announcements', [AdminController::class, 'announcements']);
         Route::post('/api/admin/announcements', [AdminController::class, 'postAnnouncement']);
     });
