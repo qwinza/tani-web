@@ -15,6 +15,9 @@ class Order extends Model
         'quantity',
         'total_price',
         'status',
+        'snap_token',
+        'payment_type',
+        'external_id',
     ];
 
     public function buyer()
