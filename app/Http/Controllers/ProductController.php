@@ -13,7 +13,35 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return response()->json(Product::with('user:id,name')->get());
+        $products = Product::with(['user:id,name', 'category:id,name'])->get();
+
+        // Ensure JSON fields are properly decoded as arrays
+        $products->each(function ($product) {
+            $product->features = is_string($product->features) ? json_decode($product->features, true) : $product->features;
+            $product->images = is_string($product->images) ? json_decode($product->images, true) : $product->images;
+            $product->certifications = is_string($product->certifications) ? json_decode($product->certifications, true) : $product->certifications;
+        });
+
+        return response()->json($products);
+    }
+
+    /**
+     * Display a single product by ID.
+     */
+    public function show($id)
+    {
+        $product = Product::with(['user:id,name,email', 'category:id,name'])->find($id);
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+        // Ensure JSON fields are properly decoded as arrays
+        $product->features = is_string($product->features) ? json_decode($product->features, true) : $product->features;
+        $product->images = is_string($product->images) ? json_decode($product->images, true) : $product->images;
+        $product->certifications = is_string($product->certifications) ? json_decode($product->certifications, true) : $product->certifications;
+
+        return response()->json($product);
     }
 
     /**
@@ -34,7 +62,13 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
             'stock' => 'required|integer|min:0',
+            'min_order' => 'nullable|integer|min:1',
+            'origin' => 'nullable|string|max:255',
+            'harvest_date' => 'nullable|date',
+            'features' => 'nullable|json',
+            'certifications' => 'nullable|json',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
@@ -50,7 +84,13 @@ class ProductController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'price' => $request->price,
+            'unit' => $request->unit ?? 'kg',
             'stock' => $request->stock,
+            'min_order' => $request->min_order ?? 1,
+            'origin' => $request->origin,
+            'harvest_date' => $request->harvest_date,
+            'features' => $request->features ? json_decode($request->features, true) : null,
+            'certifications' => $request->certifications ? json_decode($request->certifications, true) : null,
             'image_url' => $imageUrl,
         ]);
 
@@ -71,11 +111,29 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
             'stock' => 'required|integer|min:0',
+            'min_order' => 'nullable|integer|min:1',
+            'origin' => 'nullable|string|max:255',
+            'harvest_date' => 'nullable|date',
+            'features' => 'nullable',
+            'certifications' => 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        $data = $request->only(['name', 'category_id', 'description', 'price', 'stock']);
+        $data = [
+            'name' => $request->name,
+            'category_id' => $request->category_id,
+            'description' => $request->description,
+            'price' => $request->price,
+            'unit' => $request->unit ?? 'kg',
+            'stock' => $request->stock,
+            'min_order' => $request->min_order ?? 1,
+            'origin' => $request->origin,
+            'harvest_date' => $request->harvest_date,
+            'features' => $request->features,
+            'certifications' => $request->certifications,
+        ];
 
         if ($request->hasFile('image')) {
             // Option: delete old image if needed
