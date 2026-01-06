@@ -7,11 +7,15 @@ use App\Http\Controllers\LandingPageController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 
 
 Route::get('/', [LandingPageController::class, 'index']);
 Route::get('/api/features', [LandingPageController::class, 'getFeatures']);
 Route::get('/api/farmers', [AuthController::class, 'getPublicFarmers']);
+
+// Midtrans Callback (public, no auth required)
+Route::post('/api/payment/callback', [PaymentController::class, 'callback']);
 
 // Auth Routes
 Route::post('/api/register', [AuthController::class, 'register']);
@@ -36,15 +40,22 @@ Route::middleware(['auth'])->group(function () {
 
         // Farmer Order views
         Route::get('/api/farmer/orders', [OrderController::class, 'farmerOrders']);
+        Route::post('/api/orders/{order}/approve', [OrderController::class, 'approve']);
+        Route::post('/api/orders/{order}/ship', [OrderController::class, 'ship']);
         Route::patch('/api/orders/{order}/status', [OrderController::class, 'updateStatus']);
     });
 
     // Buyer & All Auth User routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/api/orders', [OrderController::class, 'index']);
+        Route::get('/api/orders/{order}', [OrderController::class, 'show']);
         Route::post('/api/orders', [OrderController::class, 'store']);
+        Route::post('/api/orders/{order}/complete', [OrderController::class, 'complete']);
         Route::get('/api/categories', [AdminController::class, 'categories']);
         Route::get('/api/announcements/latest', [AdminController::class, 'announcements']); // Simple fetch
+        
+        // Payment routes
+        Route::post('/api/payment/checkout', [PaymentController::class, 'checkout']);
     });
 
     // Admin routes

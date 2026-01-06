@@ -6,14 +6,26 @@ export default function ShoppingCartUI() {
     const { cart, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [address, setAddress] = useState('');
+    const [phone, setPhone] = useState('');
 
     const handleCheckout = async () => {
         if (cart.length === 0) return;
+        if (!address || !phone) {
+            alert('Silakan lengkapi alamat dan nomor telepon pengiriman');
+            return;
+        }
         setLoading(true);
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
         try {
-            const response = await fetch('/api/orders', {
+            // For now, Midtrans only supports single product checkout
+            // We'll create payment for the first item (or you can modify backend to support multiple)
+            const totalAmount = cartTotal;
+            const firstProduct = cart[0];
+
+            const response = await fetch('/api/payment/checkout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -21,24 +33,48 @@ export default function ShoppingCartUI() {
                     'X-CSRF-TOKEN': csrfToken
                 },
                 body: JSON.stringify({
-                    items: cart.map(item => ({
-                        product_id: item.id,
-                        quantity: item.quantity
-                    }))
+                    product_id: firstProduct.id,
+                    quantity: cart.reduce((sum, item) => sum + item.quantity, 0), // Total items
+                    total_price: totalAmount,
+                    cart_items: cart, // Send full cart for reference
+                    shipping_address: address,
+                    phone_number: phone
                 })
             });
 
-            if (response.ok) {
-                clearCart();
-                setSuccess(true);
+            const data = await response.json();
+
+            if (data.success && data.snap_token) {
+                // Open Midtrans Snap payment popup
+                window.snap.pay(data.snap_token, {
+                    onSuccess: function(result) {
+                        console.log('Payment success:', result);
+                        clearCart();
+                        setSuccess(true);
+                        setLoading(false);
+                    },
+                    onPending: function(result) {
+                        console.log('Payment pending:', result);
+                        alert('Menunggu pembayaran. Silakan selesaikan pembayaran Anda.');
+                        setLoading(false);
+                    },
+                    onError: function(result) {
+                        console.error('Payment error:', result);
+                        alert('Pembayaran gagal. Silakan coba lagi.');
+                        setLoading(false);
+                    },
+                    onClose: function() {
+                        console.log('Payment popup closed');
+                        setLoading(false);
+                    }
+                });
             } else {
-                const data = await response.json();
-                alert(data.message || 'Gagal checkout');
+                alert(data.message || 'Gagal membuat pembayaran');
+                setLoading(false);
             }
         } catch (error) {
             console.error('Error checkout:', error);
             alert('Terjadi kesalahan koneksi');
-        } finally {
             setLoading(false);
         }
     };
@@ -132,12 +168,36 @@ export default function ShoppingCartUI() {
                                 <span className="text-2xl font-black text-emerald-500">Rp {cartTotal.toLocaleString('id-ID')}</span>
                             </div>
                         </div>
+
+                        <div className="space-y-4 mb-8">
+                            <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest">Informasi Pengiriman</h4>
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Alamat Lengkap</label>
+                                <textarea 
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    placeholder="Masukkan alamat lengkap pengiriman..."
+                                    className="w-full bg-slate-800 border-none rounded-2xl p-4 text-sm text-white placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 min-h-[100px] outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Nomor Telepon/WhatsApp</label>
+                                <input 
+                                    type="text"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="Contoh: 08123456789"
+                                    className="w-full bg-slate-800 border-none rounded-2xl p-4 text-sm text-white placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+
                         <button 
                             onClick={handleCheckout}
                             disabled={loading}
                             className="w-full py-4 bg-emerald-500 text-slate-900 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-emerald-400 transition-all disabled:opacity-50"
                         >
-                            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <><CreditCard className="w-5 h-5" /> Checkout Sekarang</>}
+                            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <><CreditCard className="w-5 h-5" /> Pilih Metode Pembayaran</>}
                         </button>
                         <p className="text-[10px] text-slate-500 text-center mt-6 uppercase font-bold tracking-widest">Aman & Terpercaya dengan AgriMatch</p>
                     </div>
