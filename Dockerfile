@@ -23,4 +23,4 @@ RUN composer install --no-interaction --optimize-autoloader
 RUN touch database/database.sqlite
 
 # Run migrations, seed, and start the server
-CMD sh -c "php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=8080"
+CMD sh -c "php artisan storage:link && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=8080"
