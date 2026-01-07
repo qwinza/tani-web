@@ -70,12 +70,24 @@ class ProductController extends Controller
             'features' => 'nullable|json',
             'certifications' => 'nullable|json',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'additionalImages.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $imageUrl = null;
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('products', 'public');
             $imageUrl = asset('storage/' . $path);
+        }
+
+        // Handle additional images
+        $additionalImageUrls = [];
+        if ($request->hasFile('additionalImages')) {
+            foreach ($request->file('additionalImages') as $image) {
+                if ($image) {
+                    $path = $image->store('products', 'public');
+                    $additionalImageUrls[] = asset('storage/' . $path);
+                }
+            }
         }
 
         $product = Product::create([
@@ -92,6 +104,7 @@ class ProductController extends Controller
             'features' => $request->features ? json_decode($request->features, true) : null,
             'certifications' => $request->certifications ? json_decode($request->certifications, true) : null,
             'image_url' => $imageUrl,
+            'images' => !empty($additionalImageUrls) ? $additionalImageUrls : null,
         ]);
 
         return response()->json($product, 201);
@@ -119,6 +132,7 @@ class ProductController extends Controller
             'features' => 'nullable',
             'certifications' => 'nullable',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'additionalImages.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $data = [
@@ -139,6 +153,20 @@ class ProductController extends Controller
             // Option: delete old image if needed
             $path = $request->file('image')->store('products', 'public');
             $data['image_url'] = asset('storage/' . $path);
+        }
+
+        // Handle additional images
+        if ($request->hasFile('additionalImages')) {
+            $additionalImageUrls = [];
+            foreach ($request->file('additionalImages') as $image) {
+                if ($image) {
+                    $path = $image->store('products', 'public');
+                    $additionalImageUrls[] = asset('storage/' . $path);
+                }
+            }
+            if (!empty($additionalImageUrls)) {
+                $data['images'] = $additionalImageUrls;
+            }
         }
 
         $product->update($data);

@@ -77,7 +77,7 @@ export default function OrderDetailModal({ order, isOpen, onClose }) {
                                     <div className="flex-1 flex flex-col justify-center">
                                         <p className="font-black text-gray-900 leading-tight mb-1 text-lg">{order.product?.name}</p>
                                         <p className="text-xs font-bold text-gray-400 mb-2">{order.quantity} unit x Rp {Number(order.total_price / order.quantity).toLocaleString('id-ID')}</p>
-                                        <div className="pt-2 border-t border-gray-100 flex justify-between items-center">
+                                        <div className="pt-2 border-t border-gray-100 justify-between items-center">
                                             <span className="text-[10px] font-black text-gray-400 uppercase">Subtotal</span>
                                             <p className="text-xl font-black text-emerald-600 tracking-tighter">Rp {Number(order.total_price).toLocaleString('id-ID')}</p>
                                         </div>
