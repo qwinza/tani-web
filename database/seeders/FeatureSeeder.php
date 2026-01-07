@@ -64,7 +64,10 @@ class FeatureSeeder extends Seeder
         ];
 
         foreach ($features as $feature) {
-            \App\Models\Feature::create($feature);
+            \App\Models\Feature::updateOrCreate(
+                ['title' => $feature['title']], // Key to check
+                $feature                            // Values to update/create
+            );
         }
     }
 }
