@@ -18,8 +18,8 @@ Route::get('/api/farmers', [AuthController::class, 'getPublicFarmers']);
 Route::post('/api/payment/callback', [PaymentController::class, 'callback']);
 
 // Auth Routes
-Route::post('/api/register', [AuthController::class, 'register']);
-Route::post('/api/login', [AuthController::class, 'login']);
+Route::post('/api/register', [AuthController::class, 'register'])->middleware('throttle:register');
+Route::post('/api/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/api/logout', [AuthController::class, 'logout'])->middleware('auth');
 Route::get('/api/user', [AuthController::class, 'user'])->middleware('auth');
 Route::put('/api/user', [AuthController::class, 'updateProfile'])->middleware('auth');
@@ -73,6 +73,10 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/api/admin/announcements', [AdminController::class, 'announcements']);
         Route::post('/api/admin/announcements', [AdminController::class, 'postAnnouncement']);
+
+        // Security Monitoring Routes
+        Route::get('/api/admin/security-alerts', [AdminController::class, 'getSecurityAlerts']);
+        Route::post('/api/admin/security-alerts/simulate', [AdminController::class, 'simulateAlert']);
     });
 });
 

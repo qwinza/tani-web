@@ -111,4 +111,81 @@ class AdminController extends Controller
         $announcement = Announcement::create($request->all());
         return response()->json($announcement, 201);
     }
+
+    /**
+     * Get security alerts (Admin only)
+     */
+    public function getSecurityAlerts()
+    {
+        $alerts = \App\Models\SecurityAlert::with('user:id,name,email')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($alerts);
+    }
+
+    /**
+     * Simulate a security alert for testing/demonstration.
+     */
+    public function simulateAlert(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|string|in:sql_injection,xss_attempt,login_failed,unauthorized_access,file_upload_blocked',
+            'severity' => 'required|string|in:low,medium,high,critical',
+            'details' => 'required|string',
+        ]);
+
+        $alert = \App\Models\SecurityAlert::create([
+            'event_type' => $request->type,
+            'ip_address' => $request->ip() ?? '127.0.0.1',
+            'user_agent' => $request->userAgent() ?? 'Simulated Browser',
+            'details' => '[SIMULASI] ' . $request->details,
+            'severity' => $request->severity,
+            'user_id' => auth()->id(),
+        ]);
+
+        $this->notifyTelegram($alert);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Simulasi alert keamanan berhasil dicatat dan dikirim ke bot Telegram.',
+            'alert' => $alert
+        ]);
+    }
+
+    /**
+     * Direct notification helper for app-level critical alerts.
+     */
+    protected function notifyTelegram($alert)
+    {
+        $token = env('TELEGRAM_BOT_TOKEN');
+        $chatId = env('TELEGRAM_CHAT_ID');
+
+        if (!$token || !$chatId) {
+            return;
+        }
+
+        $message = "⚠️ *SECURITY ALERT SYSTEM* ⚠️\n";
+        $message .= "--------------------------------------\n";
+        $message .= "*Tipe Event:* " . strtoupper(str_replace('_', ' ', $alert->event_type)) . "\n";
+        $message .= "*Bahaya:* " . strtoupper($alert->severity) . "\n";
+        $message .= "*IP Penyerang:* " . $alert->ip_address . "\n";
+        $message .= "*User Agent:* " . $alert->user_agent . "\n";
+        $message .= "*Rincian:* " . $alert->details . "\n";
+        $message .= "*Waktu:* " . $alert->created_at . "\n";
+
+        try {
+            $url = "https://api.telegram.org/bot{$token}/sendMessage";
+            $client = new \GuzzleHttp\Client();
+            $client->post($url, [
+                'json' => [
+                    'chat_id' => $chatId,
+                    'text' => $message,
+                    'parse_mode' => 'Markdown'
+                ]
+            ]);
+        } catch (\Exception $e) {
+            logger()->error('Telegram notification failed: ' . $e->getMessage());
+        }
+    }
 }

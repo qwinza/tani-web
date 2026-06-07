@@ -14,10 +14,13 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|regex:/^[a-zA-Z\s]+$/',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/|confirmed',
             'role' => 'required|string|in:petani,pembeli',
+        ], [
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
+            'password.regex' => 'Password wajib mengandung huruf besar, huruf kecil, dan angka.',
         ]);
 
         $user = User::create([
@@ -43,6 +46,18 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+            try {
+                \App\Models\SecurityAlert::create([
+                    'event_type' => 'login_failed',
+                    'ip_address' => $request->ip() ?? '127.0.0.1',
+                    'user_agent' => $request->userAgent() ?? 'Unknown',
+                    'details' => 'Gagal masuk menggunakan email: ' . $request->email,
+                    'severity' => 'medium',
+                ]);
+            } catch (\Exception $e) {
+                logger()->error('Failed to log failed login: ' . $e->getMessage());
+            }
+
             throw ValidationException::withMessages([
                 'email' => [trans('auth.failed')],
             ]);
