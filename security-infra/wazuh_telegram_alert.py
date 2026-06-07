@@ -9,9 +9,9 @@ import sys
 import json
 import urllib.request
 
-# Konfigurasi Default (Dapat ditimpa oleh argumen)
-CHAT_ID = "-5270357575"
-BOT_TOKEN = "8607227541:AAEeojlzfqbYajm9KC9SHL2SOZEUe7eDJTo"
+# Konfigurasi Default (Dapat ditimpa oleh argumen atau konfigurasi eksternal)
+CHAT_ID = "YOUR_TELEGRAM_CHAT_ID"
+BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
 
 # Wazuh memanggil script ini dengan format:
 # script.py [alert_file_path] [api_key] [api_url]
