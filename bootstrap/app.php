@@ -16,12 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SimpleWafMiddleware::class,
         ]);
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'role' => App\Http\Middleware\RoleMiddleware::class,
         ]);
         $middleware->validateCsrfTokens(except: [
             'api/payment/callback',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
     })->create();
