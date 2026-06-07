@@ -18,6 +18,11 @@ class Order extends Model
         'snap_token',
         'payment_type',
         'external_id',
+        'shipping_proof',
+        'shipping_address',
+        'phone_number',
+        'rating',
+        'review',
     ];
 
     public function buyer()

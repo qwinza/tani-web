@@ -40,13 +40,17 @@ Route::middleware(['auth'])->group(function () {
 
         // Farmer Order views
         Route::get('/api/farmer/orders', [OrderController::class, 'farmerOrders']);
+        Route::post('/api/orders/{order}/approve', [OrderController::class, 'approve']);
+        Route::post('/api/orders/{order}/ship', [OrderController::class, 'ship']);
         Route::patch('/api/orders/{order}/status', [OrderController::class, 'updateStatus']);
     });
 
     // Buyer & All Auth User routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/api/orders', [OrderController::class, 'index']);
+        Route::get('/api/orders/{order}', [OrderController::class, 'show']);
         Route::post('/api/orders', [OrderController::class, 'store']);
+        Route::post('/api/orders/{order}/complete', [OrderController::class, 'complete']);
         Route::get('/api/categories', [AdminController::class, 'categories']);
         Route::get('/api/announcements/latest', [AdminController::class, 'announcements']); // Simple fetch
         

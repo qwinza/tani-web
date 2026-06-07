@@ -8,6 +8,10 @@ export default function ProductManagement() {
     const [editingProduct, setEditingProduct] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Image preview states
+    const [mainImagePreview, setMainImagePreview] = useState(null);
+    const [additionalImagePreviews, setAdditionalImagePreviews] = useState([null, null, null]);
+
     // Form state
     const [formData, setFormData] = useState({
         name: '',
@@ -68,6 +72,14 @@ export default function ProductManagement() {
         });
         setEditingProduct(null);
         setIsFormOpen(false);
+
+        // Clean up preview URLs
+        if (mainImagePreview) URL.revokeObjectURL(mainImagePreview);
+        setMainImagePreview(null);
+        additionalImagePreviews.forEach(preview => {
+            if (preview) URL.revokeObjectURL(preview);
+        });
+        setAdditionalImagePreviews([null, null, null]);
     };
 
     const handleEdit = (product) => {
@@ -136,11 +148,13 @@ export default function ProductManagement() {
             data.append('image', formData.mainImage);
         }
 
-        // TODO: Handle additional images
-        // For now, we'll handle them as an array
+        // Send additional images as separate files
         if (formData.additionalImages.length > 0) {
-            const imageUrls = []; // Would need backend support for multiple uploads
-            data.append('images', JSON.stringify(imageUrls));
+            formData.additionalImages.forEach((file, index) => {
+                if (file) {
+                    data.append('additionalImages[]', file);
+                }
+            });
         }
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -223,6 +237,56 @@ export default function ProductManagement() {
             features: prev.features.filter((_, i) => i !== index)
         }));
     };
+
+    // Create preview URL when main image is selected
+    useEffect(() => {
+        if (formData.mainImage) {
+            // Clean up old preview URL
+            if (mainImagePreview) {
+                URL.revokeObjectURL(mainImagePreview);
+            }
+            // Create new preview URL
+            const previewUrl = URL.createObjectURL(formData.mainImage);
+            setMainImagePreview(previewUrl);
+        } else {
+            // If editing existing product, show existing image
+            if (editingProduct?.image_url) {
+                setMainImagePreview(editingProduct.image_url);
+            } else {
+                setMainImagePreview(null);
+            }
+        }
+
+        // Cleanup on unmount
+        return () => {
+            if (mainImagePreview && formData.mainImage) {
+                URL.revokeObjectURL(mainImagePreview);
+            }
+        };
+    }, [formData.mainImage, editingProduct]);
+
+    // Create preview URLs for additional images
+    useEffect(() => {
+        const newPreviews = formData.additionalImages.map((file, index) => {
+            if (file) {
+                // Clean up old preview
+                if (additionalImagePreviews[index]) {
+                    URL.revokeObjectURL(additionalImagePreviews[index]);
+                }
+                return URL.createObjectURL(file);
+            }
+            return null;
+        });
+
+        setAdditionalImagePreviews(newPreviews);
+
+        // Cleanup on unmount
+        return () => {
+            newPreviews.forEach(preview => {
+                if (preview) URL.revokeObjectURL(preview);
+            });
+        };
+    }, [formData.additionalImages]);
 
     if (loading) return <div className="p-12 text-center text-emerald-600 font-bold animate-pulse">Memuat produk...</div>;
 
@@ -493,7 +557,7 @@ export default function ProductManagement() {
 
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Foto Utama</label>
-                                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-emerald-500 transition-colors">
+                                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-emerald-500 transition-colors">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -501,12 +565,30 @@ export default function ProductManagement() {
                                             className="hidden"
                                             id="mainImage"
                                         />
-                                        <label htmlFor="mainImage" className="cursor-pointer">
-                                            <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                            <p className="text-sm text-gray-600 font-semibold">
-                                                {formData.mainImage ? formData.mainImage.name : 'Klik untuk upload foto utama'}
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-1">PNG, JPG hingga 2MB</p>
+                                        <label htmlFor="mainImage" className="cursor-pointer block">
+                                            {mainImagePreview ? (
+                                                <div className="space-y-3">
+                                                    <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
+                                                        <img
+                                                            src={mainImagePreview}
+                                                            alt="Preview"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                    <p className="text-sm text-emerald-600 font-semibold text-center">
+                                                        ✓ {formData.mainImage ? formData.mainImage.name : 'Foto saat ini'}
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 text-center">Klik untuk mengganti</p>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center">
+                                                    <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                                    <p className="text-sm text-gray-600 font-semibold">
+                                                        Klik untuk upload foto utama
+                                                    </p>
+                                                    <p className="text-xs text-gray-400 mt-1">PNG, JPG hingga 2MB</p>
+                                                </div>
+                                            )}
                                         </label>
                                     </div>
                                 </div>
@@ -516,7 +598,7 @@ export default function ProductManagement() {
                                     <p className="text-xs text-gray-500 mb-2">Upload hingga 3 foto tambahan untuk galeri produk</p>
                                     <div className="grid grid-cols-3 gap-3">
                                         {[0, 1, 2].map(index => (
-                                            <div key={index} className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-emerald-500 transition-colors aspect-square flex items-center justify-center">
+                                            <div key={index} className="border-2 border-dashed border-gray-300 rounded-xl overflow-hidden hover:border-emerald-500 transition-colors aspect-square">
                                                 <input
                                                     type="file"
                                                     accept="image/*"
@@ -528,11 +610,19 @@ export default function ProductManagement() {
                                                     className="hidden"
                                                     id={`additionalImage${index}`}
                                                 />
-                                                <label htmlFor={`additionalImage${index}`} className="cursor-pointer">
-                                                    <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-1" />
-                                                    <p className="text-xs text-gray-600">
-                                                        {formData.additionalImages[index] ? '✓' : '+'}
-                                                    </p>
+                                                <label htmlFor={`additionalImage${index}`} className="cursor-pointer w-full h-full flex items-center justify-center">
+                                                    {additionalImagePreviews[index] ? (
+                                                        <img
+                                                            src={additionalImagePreviews[index]}
+                                                            alt={`Preview ${index + 1}`}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="text-center p-4">
+                                                            <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-1" />
+                                                            <p className="text-xs text-gray-600">+</p>
+                                                        </div>
+                                                    )}
                                                 </label>
                                             </div>
                                         ))}

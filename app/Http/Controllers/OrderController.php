@@ -32,6 +32,8 @@ class OrderController extends Controller
             'items' => 'required|array',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
+            'shipping_address' => 'required|string',
+            'phone_number' => 'required|string',
         ]);
 
         try {
@@ -50,6 +52,8 @@ class OrderController extends Controller
                         'quantity' => $item['quantity'],
                         'total_price' => $product->price * $item['quantity'],
                         'status' => 'pending',
+                        'shipping_address' => $request->shipping_address,
+                        'phone_number' => $request->phone_number,
                     ]);
 
                     $product->decrement('stock', $item['quantity']);
@@ -86,7 +90,7 @@ class OrderController extends Controller
      */
     public function updateStatus(Order $order, Request $request)
     {
-        $request->validate(['status' => 'required|in:pending,paid,completed,cancelled']);
+        $request->validate(['status' => 'required|in:pending,processing,shipped,completed,cancelled']);
         
         // Ensure farmer owns the product
         if ($order->product->user_id !== Auth::id()) {
@@ -97,6 +101,91 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Status pesanan diperbarui',
+            'order' => $order
+        ]);
+    }
+
+    /**
+     * Get single order detail.
+     */
+    public function show(Order $order)
+    {
+        // Load relationships
+        $order->load(['buyer', 'product.user']);
+
+        // Check authorization
+        if ($order->user_id !== Auth::id() && $order->product->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        return response()->json($order);
+    }
+
+    /**
+     * Approve order (Farmer).
+     */
+    public function approve(Order $order)
+    {
+        if ($order->product->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        $order->update(['status' => 'processing']);
+
+        return response()->json([
+            'message' => 'Pesanan telah disetujui dan sedang disiapkan',
+            'order' => $order
+        ]);
+    }
+
+    /**
+     * Ship order (Farmer).
+     */
+    public function ship(Order $order, Request $request)
+    {
+        if ($order->product->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        $request->validate([
+            'shipping_proof' => 'required|image|max:2048'
+        ]);
+
+        $path = $request->file('shipping_proof')->store('shipping_proofs', 'public');
+
+        $order->update([
+            'status' => 'shipped',
+            'shipping_proof' => $path
+        ]);
+
+        return response()->json([
+            'message' => 'Pesanan telah dikirim ke ekspedisi',
+            'order' => $order
+        ]);
+    }
+
+    /**
+     * Complete order (Buyer).
+     */
+    public function complete(Order $order, Request $request)
+    {
+        if ($order->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'review' => 'nullable|string'
+        ]);
+
+        $order->update([
+            'status' => 'completed',
+            'rating' => $request->rating,
+            'review' => $request->review,
+        ]);
+
+        return response()->json([
+            'message' => 'Pesanan telah selesai',
             'order' => $order
         ]);
     }

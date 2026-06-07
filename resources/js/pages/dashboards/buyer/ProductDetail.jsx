@@ -59,15 +59,19 @@ export default function ProductDetail({ productId, onBack }) {
         }
     };
 
-    // Product images - use from database if available, otherwise use mock images
-    const productImages = product?.images && product.images.length > 0
-        ? product.images
-        : [
-            product?.image_url || 'https://images.unsplash.com/photo-1595841696662-540937a6b28b?q=80&w=800&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1597362925123-77861d3fbac7?q=80&w=800&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?q=80&w=800&auto=format&fit=crop',
-            'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?q=80&w=800&auto=format&fit=crop',
-        ];
+    // Product images - use uploaded image first, then images array, then fallback to single dummy image
+    const productImages = (() => {
+        // If images array exists and has items, use it
+        if (product?.images && product.images.length > 0) {
+            return product.images;
+        }
+        // Otherwise use image_url if available
+        if (product?.image_url) {
+            return [product.image_url];
+        }
+        // Last resort: single dummy image
+        return ['https://images.unsplash.com/photo-1595841696662-540937a6b28b?q=80&w=800&auto=format&fit=crop'];
+    })();
 
     // Product features - use from database if available
     const productFeatures = product?.features || [

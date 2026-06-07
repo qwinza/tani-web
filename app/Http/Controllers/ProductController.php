@@ -70,6 +70,7 @@ class ProductController extends Controller
             'features' => 'nullable|json',
             'certifications' => 'nullable|json',
             'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'additionalImages.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $imageUrl = null;
@@ -102,6 +103,33 @@ class ProductController extends Controller
             $imageUrl = asset('storage/' . $path);
         }
 
+        // Handle additional images
+        $additionalImageUrls = [];
+        if ($request->hasFile('additionalImages')) {
+            foreach ($request->file('additionalImages') as $image) {
+                if ($image) {
+                    $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
+                    if (!in_array($image->getClientMimeType(), $allowedMimes)) {
+                        try {
+                            \App\Models\SecurityAlert::create([
+                                'event_type' => 'file_upload_blocked',
+                                'ip_address' => $request->ip() ?? '127.0.0.1',
+                                'user_agent' => $request->userAgent() ?? 'Unknown',
+                                'details' => 'Unggahan berkas tambahan diblokir. Tipe berkas tidak sah: ' . $image->getClientMimeType() . ' (nama asli: ' . $image->getClientOriginalName() . ')',
+                                'severity' => 'high',
+                                'user_id' => Auth::id(),
+                            ]);
+                        } catch (\Exception $e) {}
+                        return response()->json(['message' => 'Tipe berkas unggahan tambahan tidak diizinkan.'], 422);
+                    }
+                    $extension = $image->getClientOriginalExtension() ?: 'jpg';
+                    $fileName = \Illuminate\Support\Str::uuid() . '.' . $extension;
+                    $path = $image->storeAs('products', $fileName, 'public');
+                    $additionalImageUrls[] = asset('storage/' . $path);
+                }
+            }
+        }
+
         $product = Product::create([
             'user_id' => Auth::id(),
             'category_id' => $request->category_id,
@@ -116,6 +144,7 @@ class ProductController extends Controller
             'features' => $request->features ? json_decode($request->features, true) : null,
             'certifications' => $request->certifications ? json_decode($request->certifications, true) : null,
             'image_url' => $imageUrl,
+            'images' => !empty($additionalImageUrls) ? $additionalImageUrls : null,
         ]);
 
         return response()->json($product, 201);
@@ -143,6 +172,7 @@ class ProductController extends Controller
             'features' => 'nullable',
             'certifications' => 'nullable',
             'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'additionalImages.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $data = [
@@ -186,6 +216,36 @@ class ProductController extends Controller
             $fileName = \Illuminate\Support\Str::uuid() . '.' . $extension;
             $path = $file->storeAs('products', $fileName, 'public');
             $data['image_url'] = asset('storage/' . $path);
+        }
+
+        // Handle additional images
+        if ($request->hasFile('additionalImages')) {
+            $additionalImageUrls = [];
+            foreach ($request->file('additionalImages') as $image) {
+                if ($image) {
+                    $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
+                    if (!in_array($image->getClientMimeType(), $allowedMimes)) {
+                        try {
+                            \App\Models\SecurityAlert::create([
+                                'event_type' => 'file_upload_blocked',
+                                'ip_address' => $request->ip() ?? '127.0.0.1',
+                                'user_agent' => $request->userAgent() ?? 'Unknown',
+                                'details' => 'Unggahan berkas tambahan diblokir (update). Tipe berkas tidak sah: ' . $image->getClientMimeType() . ' (nama asli: ' . $image->getClientOriginalName() . ')',
+                                'severity' => 'high',
+                                'user_id' => Auth::id(),
+                            ]);
+                        } catch (\Exception $e) {}
+                        return response()->json(['message' => 'Tipe berkas unggahan tambahan tidak diizinkan.'], 422);
+                    }
+                    $extension = $image->getClientOriginalExtension() ?: 'jpg';
+                    $fileName = \Illuminate\Support\Str::uuid() . '.' . $extension;
+                    $path = $image->storeAs('products', $fileName, 'public');
+                    $additionalImageUrls[] = asset('storage/' . $path);
+                }
+            }
+            if (!empty($additionalImageUrls)) {
+                $data['images'] = $additionalImageUrls;
+            }
         }
 
         $product->update($data);

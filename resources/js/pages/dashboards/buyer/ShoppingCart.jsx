@@ -6,9 +6,15 @@ export default function ShoppingCartUI() {
     const { cart, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [address, setAddress] = useState('');
+    const [phone, setPhone] = useState('');
 
     const handleCheckout = async () => {
         if (cart.length === 0) return;
+        if (!address || !phone) {
+            alert('Silakan lengkapi alamat dan nomor telepon pengiriman');
+            return;
+        }
         setLoading(true);
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -30,7 +36,9 @@ export default function ShoppingCartUI() {
                     product_id: firstProduct.id,
                     quantity: cart.reduce((sum, item) => sum + item.quantity, 0), // Total items
                     total_price: totalAmount,
-                    cart_items: cart // Send full cart for reference
+                    cart_items: cart, // Send full cart for reference
+                    shipping_address: address,
+                    phone_number: phone
                 })
             });
 
@@ -160,6 +168,30 @@ export default function ShoppingCartUI() {
                                 <span className="text-2xl font-black text-emerald-500">Rp {cartTotal.toLocaleString('id-ID')}</span>
                             </div>
                         </div>
+
+                        <div className="space-y-4 mb-8">
+                            <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest">Informasi Pengiriman</h4>
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Alamat Lengkap</label>
+                                <textarea 
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    placeholder="Masukkan alamat lengkap pengiriman..."
+                                    className="w-full bg-slate-800 border-none rounded-2xl p-4 text-sm text-white placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 min-h-[100px] outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Nomor Telepon/WhatsApp</label>
+                                <input 
+                                    type="text"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="Contoh: 08123456789"
+                                    className="w-full bg-slate-800 border-none rounded-2xl p-4 text-sm text-white placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                />
+                            </div>
+                        </div>
+
                         <button 
                             onClick={handleCheckout}
                             disabled={loading}
