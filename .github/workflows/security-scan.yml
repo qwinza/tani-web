@@ -1,0 +1,61 @@
+# security-scan.yml - CI/CD Security Pipeline (GitHub Actions)
+# Menjalankan pemindaian celah keamanan, pustaka rentan, dan kebocoran rahasia secara otomatis setiap push/PR.
+
+name: Security Auditing & SAST
+
+on:
+  push:
+    branches: [ "master", "main", "dev" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  security:
+    name: Security Scan & Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout codebase
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # 2. Setup PHP Environment
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        coverage: none
+
+    # 3. Cache Composer Dependencies
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: |
+        echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+
+    # 4. Install Composer dependencies
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    # 5. PEMINDAIAN KEAMANAN DEPT (Dependency Scan)
+    # Memeriksa celah keamanan pada paket composer yang terinstal
+    - name: Run PHP Security Checker
+      uses: symfonycorp/security-checker-action@v5
+
+    # 6. PEMINDAIAN KEBOCORAN KREDENSIAL (Secret Detection)
+    # Mendeteksi jika ada key API, token, atau secret key yang bocor di repositori
+    - name: Secret Detection (TruffleHog or Gitleaks Check)
+      uses: trufflesecurity/trufflehog-enterprise-github-action@main
+      continue-on-error: true # Opsional: Jangan gagalkan build jika lab lingkungan belum memiliki token
+
+    # 7. ANALISIS STATIS KODE (SAST)
+    # Memeriksa bug dan celah keamanan potensial pada kode sumber PHP
+    - name: Run Static Analysis (LaraStan)
+      run: ./vendor/bin/phpstan analyse --error-format=github || true

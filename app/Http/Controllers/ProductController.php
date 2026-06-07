@@ -69,12 +69,36 @@ class ProductController extends Controller
             'harvest_date' => 'nullable|date',
             'features' => 'nullable|json',
             'certifications' => 'nullable|json',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $imageUrl = null;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public');
+            $file = $request->file('image');
+            
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
+            if (!in_array($file->getClientMimeType(), $allowedMimes)) {
+                try {
+                    \App\Models\SecurityAlert::create([
+                        'event_type' => 'file_upload_blocked',
+                        'ip_address' => $request->ip() ?? '127.0.0.1',
+                        'user_agent' => $request->userAgent() ?? 'Unknown',
+                        'details' => 'Unggahan berkas diblokir (store). Tipe berkas tidak sah: ' . $file->getClientMimeType() . ' (nama asli: ' . $file->getClientOriginalName() . ')',
+                        'severity' => 'high',
+                        'user_id' => Auth::id(),
+                    ]);
+                } catch (\Exception $e) {
+                    logger()->error('Failed to log blocked file upload: ' . $e->getMessage());
+                }
+                return response()->json(['message' => 'Tipe berkas unggahan tidak diizinkan.'], 422);
+            }
+
+            $extension = $file->getClientOriginalExtension();
+            if (empty($extension)) {
+                $extension = 'jpg';
+            }
+            $fileName = \Illuminate\Support\Str::uuid() . '.' . $extension;
+            $path = $file->storeAs('products', $fileName, 'public');
             $imageUrl = asset('storage/' . $path);
         }
 
@@ -118,7 +142,7 @@ class ProductController extends Controller
             'harvest_date' => 'nullable|date',
             'features' => 'nullable',
             'certifications' => 'nullable',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $data = [
@@ -136,8 +160,31 @@ class ProductController extends Controller
         ];
 
         if ($request->hasFile('image')) {
-            // Option: delete old image if needed
-            $path = $request->file('image')->store('products', 'public');
+            $file = $request->file('image');
+            
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/svg+xml'];
+            if (!in_array($file->getClientMimeType(), $allowedMimes)) {
+                try {
+                    \App\Models\SecurityAlert::create([
+                        'event_type' => 'file_upload_blocked',
+                        'ip_address' => $request->ip() ?? '127.0.0.1',
+                        'user_agent' => $request->userAgent() ?? 'Unknown',
+                        'details' => 'Unggahan berkas diblokir (update). Tipe berkas tidak sah: ' . $file->getClientMimeType() . ' (nama asli: ' . $file->getClientOriginalName() . ')',
+                        'severity' => 'high',
+                        'user_id' => Auth::id(),
+                    ]);
+                } catch (\Exception $e) {
+                    logger()->error('Failed to log blocked file upload: ' . $e->getMessage());
+                }
+                return response()->json(['message' => 'Tipe berkas unggahan tidak diizinkan.'], 422);
+            }
+
+            $extension = $file->getClientOriginalExtension();
+            if (empty($extension)) {
+                $extension = 'jpg';
+            }
+            $fileName = \Illuminate\Support\Str::uuid() . '.' . $extension;
+            $path = $file->storeAs('products', $fileName, 'public');
             $data['image_url'] = asset('storage/' . $path);
         }
 

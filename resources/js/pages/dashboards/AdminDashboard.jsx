@@ -8,6 +8,7 @@ import AdminVerifyFarmers from './admin/AdminVerifyFarmers';
 import AdminCategories from './admin/AdminCategories';
 import AdminAnnouncements from './admin/AdminAnnouncements';
 import AdminOrders from './admin/AdminOrders';
+import SecurityMonitoring from './admin/SecurityMonitoring';
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
             case 'categories': return <AdminCategories />;
             case 'announcements': return <AdminAnnouncements />;
             case 'orders': return <AdminOrders />;
+            case 'security': return <SecurityMonitoring />;
             default: return (
                 <main className="p-8">
                     {/* Stats Grid */}
@@ -192,6 +194,12 @@ export default function AdminDashboard() {
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'announcements' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                     >
                         <Megaphone className="w-5 h-5" /> Pengumuman
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('security')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'security' ? 'bg-red-900 text-white font-semibold shadow-lg shadow-red-950/50' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                    >
+                        <Shield className="w-5 h-5 text-red-500" /> Monitoring Keamanan
                     </button>
                 </nav>
                 <div className="p-4 border-t border-slate-800">
